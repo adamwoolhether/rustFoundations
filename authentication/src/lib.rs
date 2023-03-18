@@ -1,17 +1,52 @@
-#[derive(PartialEq, Debug)]
+pub struct User {
+    username: String,
+    password: String,
+    action: LoginAction,
+}
+
+impl User {
+    pub fn new(username: &str, password: &str, action: LoginAction) -> Self {
+        Self {
+            username: username.to_string(), // Convert a &str into a String.
+            password: password.to_string(),
+            action,
+        }
+    }
+}
+
+pub fn get_users() -> [User; 4] {
+    [
+        User::new("adam", "password", LoginAction::Accept(Role::Admin)),
+        User::new("mike", "password", LoginAction::Accept(Role::User)),
+        User::new(
+            "jake",
+            "password",
+            LoginAction::Denied(DeniedReason::PasswordExpired),
+        ),
+        User::new(
+            "kevin",
+            "password",
+            LoginAction::Denied(DeniedReason::AccountLocked {
+                reason: "Contact HR!".to_string(),
+            }),
+        ),
+    ]
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub enum Role {
     Admin,
     User,
     Limited,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum DeniedReason {
     PasswordExpired,
     AccountLocked { reason: String }, // We can attach variables to individual entries.
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum LoginAction {
     Accept(Role),
     Denied(DeniedReason),
@@ -38,26 +73,24 @@ impl LoginAction {
     }
 }
 
-pub fn login(name: &str) -> Option<LoginAction> {
+pub fn login(users: &[User], username: &str, password: &str) -> Option<LoginAction> {
     // Option is a type that either does or doesn't have a value.
     // Its the closes thing to NULL in safe Rust.
-    match name.to_lowercase().trim() {
-        "adam" => Some(LoginAction::Accept(Role::Admin)),
-        "mike" => LoginAction::standard_user(),
-        "jake" => Some(LoginAction::Denied(DeniedReason::PasswordExpired)),
-        "kevin" => Some(LoginAction::Denied(DeniedReason::AccountLocked {
-            reason: "Call HR!".to_string(),
-        })),
-        _ => None,
-    }
-}
-
-pub fn greet_user(name: &str) -> String {
-    format!("Hello {name}")
-}
-
-pub fn is_login_allowed(name: &str) -> bool {
-    name.to_lowercase().trim() == "adam"
+    let username = username.trim().to_lowercase();
+    let password = password.trim();
+    users
+        .iter()
+        .find(|u| u.username == username && u.password == password)
+        .map(|user| user.action.clone())
+    // Replaces:
+    /*if let Some(user) = users
+        .iter()
+        .find(|u| u.username == username && u.password == password)
+    {
+        Some(user.action.clone()) // Cloning conducts a deep-copy, retaining all interior information. Copy is generally faster, but anything with a String cannot be copied.
+    } else {
+        None
+    }*/
 }
 
 #[cfg(test)] // Only compile next section for tests.
@@ -65,31 +98,23 @@ mod tests {
     use super::*;
 
     #[test] // Mark the function as a test to add it to Cargo's unit-test runner.
-    fn test_greet_user() {
-        assert_eq!("Hello Adam", greet_user("Adam"));
-    }
-
-    #[test]
-    fn test_case_and_trim() {
-        assert!(is_login_allowed("AdAM"));
-        assert!(is_login_allowed("    AdAM\r\n  "));
-    }
-
-    #[test]
-    fn test_login_fail() {
-        assert!(!is_login_allowed("Alice"));
-    }
-
-    #[test]
     fn test_enums() {
-        assert_eq!(login("Adam"), Some(LoginAction::Accept(Role::Admin)));
-        assert_eq!(login("mike"), Some(LoginAction::Accept(Role::User)));
+        let users = get_users();
         assert_eq!(
-            login("jake"),
+            login(&users, "Adam", "password"),
+            Some(LoginAction::Accept(Role::Admin))
+        );
+        assert_eq!(
+            login(&users, "mike", "password"),
+            Some(LoginAction::Accept(Role::User))
+        );
+        assert_eq!(
+            login(&users, "jake", "password"),
             Some(LoginAction::Denied(DeniedReason::PasswordExpired))
         );
-        assert_eq!(login("anonymous"), None);
-        if let Some(LoginAction::Denied(DeniedReason::AccountLocked { reason: _ })) = login("kevin")
+        assert_eq!(login(&users, "anonymous", "none"), None);
+        if let Some(LoginAction::Denied(DeniedReason::AccountLocked { reason: _ })) =
+            login(&users, "kevin", "password")
         {
             // Everything OK
         } else {

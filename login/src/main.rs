@@ -5,15 +5,21 @@ fn user_accepted(role: &Role) {
 }
 
 fn main() {
+    let users = get_users();
+
     println!("Welcome to the Insecure Secure Server");
     println!("Enter your username:");
-    let mut input = String::new();
+    let mut username = String::new();
+    let mut password = String::new();
     let stdin = std::io::stdin();
-    stdin.read_line(&mut input).unwrap();
+    stdin.read_line(&mut username).unwrap();
 
-    match login(&input) {
+    println!("Enter your password:");
+    stdin.read_line(&mut password).unwrap();
+
+    match login(&users, &username, &password) {
         None => {
-            println!("{} is not a known user.", input.trim());
+            println!("{} is not a known user.", username.trim());
             println!("This is where we handle new users.");
         }
         Some(login_action) => login_action.do_login(user_accepted, |reason| {
