@@ -28,6 +28,11 @@ enum Commands {
         #[arg(long)]
         admin: Option<bool>,
     },
+    /// Delete a user.
+    Delete {
+        /// Username.
+        username: String, // Here we demonstrate not using the `#[arg]`
+    },
 }
 
 type UserMap = HashMap<String, User>;
@@ -46,6 +51,9 @@ fn main() {
             admin,
         }) => {
             add_user(&mut users, username, password, limited, admin);
+        }
+        Some(Commands::Delete { username }) => {
+            delete_user(&mut users, username);
         }
         None => {
             println!("Run with --help to see instructions");
@@ -77,6 +85,10 @@ fn add_user(
     limited: Option<bool>,
     admin: Option<bool>,
 ) {
+    if users.contains_key(&username) {
+        println!("{username} already exists, aborting.");
+        return;
+    }
     let action = LoginAction::Accept(if limited.is_some() {
         // Giving an it statement as a parameter to a func.
         Role::Limited
@@ -88,5 +100,14 @@ fn add_user(
     let user = User::new(&username, &password, action);
     users.insert(username, user);
 
+    save_users_file(users);
+}
+
+fn delete_user(users: &mut UserMap, username: String) {
+    if !users.contains_key(&username) {
+        println!("{username} doesn't exist, aborting");
+        return;
+    }
+    users.remove(&username);
     save_users_file(users);
 }

@@ -1,15 +1,4 @@
 {
-  "kevin": {
-    "username": "kevin",
-    "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
-    "action": {
-      "Denied": {
-        "AccountLocked": {
-          "reason": "Contact HR!"
-        }
-      }
-    }
-  },
   "adam": {
     "username": "adam",
     "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
@@ -24,11 +13,15 @@
       "Denied": "PasswordExpired"
     }
   },
-  "mantou": {
-    "username": "mantou",
-    "password": "7D624400DA01CBB1223365BC8C9D57C924892B73868B41FCA07B1F284193D404",
+  "kevin": {
+    "username": "kevin",
+    "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
     "action": {
-      "Accept": "Limited"
+      "Denied": {
+        "AccountLocked": {
+          "reason": "Contact HR!"
+        }
+      }
     }
   },
   "mike": {
