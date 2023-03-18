@@ -7,5 +7,3 @@ edition = "2021"
 
 [dependencies]
 authentication = { path = "../authentication" }
-# To import directly from git:
-# { git = "git path" } and load directly from a shared Git repository.

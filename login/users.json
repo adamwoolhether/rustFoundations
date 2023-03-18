@@ -1,7 +1,14 @@
 {
+  "mike": {
+    "username": "mike",
+    "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
+    "action": {
+      "Accept": "User"
+    }
+  },
   "kevin": {
     "username": "kevin",
-    "password": "password",
+    "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
     "action": {
       "Denied": {
         "AccountLocked": {
@@ -12,21 +19,14 @@
   },
   "adam": {
     "username": "adam",
-    "password": "password",
+    "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
     "action": {
       "Accept": "Admin"
     }
   },
-  "mike": {
-    "username": "mike",
-    "password": "password",
-    "action": {
-      "Accept": "User"
-    }
-  },
   "jake": {
     "username": "jake",
-    "password": "password",
+    "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
     "action": {
       "Denied": "PasswordExpired"
     }

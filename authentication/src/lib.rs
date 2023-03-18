@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sha2::Digest;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -12,7 +13,7 @@ impl User {
     pub fn new(username: &str, password: &str, action: LoginAction) -> Self {
         Self {
             username: username.to_string(), // Convert a &str into a String.
-            password: password.to_string(),
+            password: hash_password(password),
             action,
         }
     }
@@ -21,7 +22,7 @@ impl User {
 pub fn build_users_file() {
     use std::io::Write;
 
-    let users = get_users();
+    let users = get_users_old();
     let json = serde_json::to_string_pretty(&users).unwrap();
     let mut f = std::fs::File::create("users.json").unwrap();
     f.write_all(json.as_bytes()).unwrap();
@@ -30,7 +31,9 @@ pub fn build_users_file() {
 pub fn get_users() -> HashMap<String, User> {
     let json = std::fs::read_to_string("users.json").unwrap();
     serde_json::from_str(&json).unwrap()
+}
 
+pub fn get_users_old() -> HashMap<String, User> {
     /*let mut result = HashMap::new();
     result.insert(
         "adam".to_string(),
@@ -38,32 +41,32 @@ pub fn get_users() -> HashMap<String, User> {
     );
     result*/
 
-    // let mut users = vec![
-    //     User::new("adam", "password", LoginAction::Accept(Role::Admin)),
-    //     User::new("mike", "password", LoginAction::Accept(Role::User)),
-    //     User::new(
-    //         "jake",
-    //         "password",
-    //         LoginAction::Denied(DeniedReason::PasswordExpired),
-    //     ),
-    //     User::new(
-    //         "kevin",
-    //         "password",
-    //         LoginAction::Denied(DeniedReason::AccountLocked {
-    //             reason: "Contact HR!".to_string(),
-    //         }),
-    //     ),
-    // ];
+    let mut users = vec![
+        User::new("adam", "password", LoginAction::Accept(Role::Admin)),
+        User::new("mike", "password", LoginAction::Accept(Role::User)),
+        User::new(
+            "jake",
+            "password",
+            LoginAction::Denied(DeniedReason::PasswordExpired),
+        ),
+        User::new(
+            "kevin",
+            "password",
+            LoginAction::Denied(DeniedReason::AccountLocked {
+                reason: "Contact HR!".to_string(),
+            }),
+        ),
+    ];
 
     /*users
     .iter() //Create an iterator.
     .map(|user| (user.username.clone(), user.clone())) // Map to a tuple (username, user). We want a copy, not a pointer to user.
     .collect() // Collect infers the collection type from the function return.*/
     // Use drain to save memory:
-    // users
-    //     .drain(0..)
-    //     .map(|user| (user.username.clone(), user))
-    //     .collect()
+    users
+        .drain(0..)
+        .map(|user| (user.username.clone(), user))
+        .collect()
 }
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
@@ -110,7 +113,7 @@ pub fn login(users: &HashMap<String, User>, username: &str, password: &str) -> O
     // Option is a type that either does or doesn't have a value.
     // Its the closes thing to NULL in safe Rust.
     let username = username.trim().to_lowercase();
-    let password = password.trim();
+    let password = hash_password(password.trim());
 
     users
         .get(&username) // Returns the Option<User>
@@ -143,6 +146,12 @@ pub fn login(users: &HashMap<String, User>, username: &str, password: &str) -> O
     } else {
         None
     }*/
+}
+
+pub fn hash_password(password: &str) -> String {
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(password);
+    format!("{:X}", hasher.finalize()) // `{:X}` means printing in hexadecimal. Prod system would want to add salt.
 }
 
 #[cfg(test)] // Only compile next section for tests.

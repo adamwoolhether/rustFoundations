@@ -5,7 +5,7 @@ fn user_accepted(role: &Role) {
 }
 
 fn main() {
-    // authentication::build_users_file();
+    // build_users_file();
     let users = get_users();
 
     // Using vectors:
