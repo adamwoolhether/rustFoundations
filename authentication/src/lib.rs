@@ -6,7 +6,7 @@ use std::collections::HashMap;
 pub struct User {
     pub username: String,
     password: String,
-    action: LoginAction,
+    pub action: LoginAction,
 }
 
 impl User {
@@ -92,6 +92,7 @@ impl LoginAction {
     // An `associated function`, returns a variable of its type.
     // Associated funcs can interact with the type `Self` but
     // not with the content of any particular variable.
+    #[warn(dead_code)]
     fn standard_user() -> Option<Self> {
         Some(LoginAction::Accept(Role::User))
     }

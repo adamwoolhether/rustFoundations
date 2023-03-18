@@ -11,7 +11,8 @@ edition = "2021"
 members = [
     "login_system",
     "login",
-    "authentication"
+    "authentication",
+    "userman"
 ]
 # To import directly from git:
 # { git = "git path" } and load directly from a shared Git repository.

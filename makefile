@@ -19,3 +19,11 @@ test:
 # Run tests for the entire workspace.
 test-all:
 	cargo test --all
+
+# Document the program.
+doc:
+	cargo doc
+
+# Run our cli user management tool.
+# cargo run --manifest-path userman/Cargo.toml -- --help
+# cargo run --manifest-path userman/Cargo.toml -- list
