@@ -1,5 +1,5 @@
 pub struct User {
-    username: String,
+    pub username: String,
     password: String,
     action: LoginAction,
 }
@@ -14,8 +14,8 @@ impl User {
     }
 }
 
-pub fn get_users() -> [User; 4] {
-    [
+pub fn get_users() -> Vec<User> {
+    vec![
         User::new("adam", "password", LoginAction::Accept(Role::Admin)),
         User::new("mike", "password", LoginAction::Accept(Role::User)),
         User::new(
