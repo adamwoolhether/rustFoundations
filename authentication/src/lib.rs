@@ -17,12 +17,33 @@ pub enum LoginAction {
     Denied(DeniedReason),
 }
 
+impl LoginAction {
+    // An `associated function`, returns a variable of its type.
+    // Associated funcs can interact with the type `Self` but
+    // not with the content of any particular variable.
+    fn standard_user() -> Option<Self> {
+        Some(LoginAction::Accept(Role::User))
+    }
+
+    // do_login is a `member function` allows interaction with the content
+    // of any particular variable. `&self` means "provide a read-only
+    // reference to myself", allowing the function to see the current value.
+    // Two `function pointers` allow passing a func as a parameter and calling
+    // them inside the do_login.
+    pub fn do_login(&self, on_success: fn(&Role), on_denied: fn(&DeniedReason)) {
+        match self {
+            Self::Accept(role) => on_success(role),
+            Self::Denied(reason) => on_denied(reason),
+        }
+    }
+}
+
 pub fn login(name: &str) -> Option<LoginAction> {
     // Option is a type that either does or doesn't have a value.
     // Its the closes thing to NULL in safe Rust.
     match name.to_lowercase().trim() {
         "adam" => Some(LoginAction::Accept(Role::Admin)),
-        "mike" => Some(LoginAction::Accept(Role::User)),
+        "mike" => LoginAction::standard_user(),
         "jake" => Some(LoginAction::Denied(DeniedReason::PasswordExpired)),
         "kevin" => Some(LoginAction::Denied(DeniedReason::AccountLocked {
             reason: "Call HR!".to_string(),
