@@ -3,6 +3,17 @@
 version = 3
 
 [[package]]
+name = "authentication"
+version = "0.1.0"
+
+[[package]]
+name = "login"
+version = "0.1.0"
+dependencies = [
+ "authentication",
+]
+
+[[package]]
 name = "login_system"
 version = "0.1.0"
 

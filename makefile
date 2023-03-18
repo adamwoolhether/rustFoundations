@@ -5,6 +5,17 @@
 run:
 	cargo run
 
-# To skip debugging checks:
+# To skip debugging checks.
 run-release:
 	cargo run --release
+
+# Creating a new library.
+new-lib:
+	cargo new --lib lib_name
+
+# Run tests.
+test:
+	cargo test
+# Run tests for the entire workspace.
+test-all:
+	cargo test --all

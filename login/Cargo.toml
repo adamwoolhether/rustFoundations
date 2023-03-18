@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+authentication = { path = "../authentication" }
+# To import directly from git:
+# { git = "git path" } and load directly from a shared Git repository.
