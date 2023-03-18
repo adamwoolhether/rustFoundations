@@ -29,3 +29,4 @@ doc:
 # cargo run --manifest-path userman/Cargo.toml -- list
 # cargo run -- add --username mantou --password baga --limited true
 # cargo run -- delete mantou
+# cargo run -- change-password adam baga

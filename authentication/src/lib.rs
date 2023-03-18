@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
     pub username: String,
-    password: String,
+    pub password: String,
     pub action: LoginAction,
 }
 

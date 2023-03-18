@@ -31,7 +31,14 @@ enum Commands {
     /// Delete a user.
     Delete {
         /// Username.
-        username: String, // Here we demonstrate not using the `#[arg]`
+        username: String, // Here we demonstrate not using the `#[arg]`, we won't need the -- flags to access it.
+    },
+    /// Change a password
+    ChangePassword {
+        /// Username.
+        username: String,
+        /// New Password.
+        new_password: String,
     },
 }
 
@@ -54,6 +61,12 @@ fn main() {
         }
         Some(Commands::Delete { username }) => {
             delete_user(&mut users, username);
+        }
+        Some(Commands::ChangePassword {
+            username,
+            new_password,
+        }) => {
+            change_password(&mut users, username, new_password);
         }
         None => {
             println!("Run with --help to see instructions");
@@ -110,4 +123,14 @@ fn delete_user(users: &mut UserMap, username: String) {
     }
     users.remove(&username);
     save_users_file(users);
+}
+
+fn change_password(users: &mut UserMap, username: String, new_password: String) {
+    // Use `get_mut` to return a mutable reference to the HashMap record.
+    if let Some(mut user) = users.get_mut(&username) {
+        user.password = hash_password(&new_password);
+        save_users_file(users);
+    } else {
+        println!("{username} doesn't exist, aborting");
+    }
 }
