@@ -13,6 +13,21 @@ struct Args {
 enum Commands {
     /// List all users.
     List,
+    // Add a user.
+    Add {
+        /// Username.
+        #[arg(long)]
+        username: String,
+        /// Password.
+        #[arg(long)]
+        password: String,
+        /// Optional - mark as limited user.
+        #[arg(long)]
+        limited: Option<bool>,
+        /// Optional - mark as admin.
+        #[arg(long)]
+        admin: Option<bool>,
+    },
 }
 
 type UserMap = HashMap<String, User>;
@@ -23,6 +38,14 @@ fn main() {
     match cli.command {
         Some(Commands::List) => {
             list_users(&users);
+        }
+        Some(Commands::Add {
+            username,
+            password,
+            limited,
+            admin,
+        }) => {
+            add_user(&mut users, username, password, limited, admin);
         }
         None => {
             println!("Run with --help to see instructions");
@@ -38,6 +61,32 @@ fn list_users(users: &UserMap) {
 
     // Ignore the key with `_` in our call to for_each().
     users.iter().for_each(|(_, user)| {
-        println!("{:<20}{:<20?}", user.username, user.action);
-    })
+        let action = format!("{:?}", user.action);
+        let action = match user.action {
+            LoginAction::Accept(..) => action.green(),
+            LoginAction::Denied(..) => action.red(),
+        };
+        println!("{:<20}{:<20}", user.username, action);
+    });
+}
+
+fn add_user(
+    users: &mut UserMap,
+    username: String,
+    password: String,
+    limited: Option<bool>,
+    admin: Option<bool>,
+) {
+    let action = LoginAction::Accept(if limited.is_some() {
+        // Giving an it statement as a parameter to a func.
+        Role::Limited
+    } else if admin.is_some() {
+        Role::Admin
+    } else {
+        Role::User
+    });
+    let user = User::new(&username, &password, action);
+    users.insert(username, user);
+
+    save_users_file(users);
 }

@@ -1,11 +1,4 @@
 {
-  "mike": {
-    "username": "mike",
-    "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
-    "action": {
-      "Accept": "User"
-    }
-  },
   "kevin": {
     "username": "kevin",
     "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
@@ -29,6 +22,20 @@
     "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
     "action": {
       "Denied": "PasswordExpired"
+    }
+  },
+  "mantou": {
+    "username": "mantou",
+    "password": "7D624400DA01CBB1223365BC8C9D57C924892B73868B41FCA07B1F284193D404",
+    "action": {
+      "Accept": "Limited"
+    }
+  },
+  "mike": {
+    "username": "mike",
+    "password": "5E884898DA28047151D0E56F8DC6292773603D0D6AABBDD62A11EF721D1542D8",
+    "action": {
+      "Accept": "User"
     }
   }
 }

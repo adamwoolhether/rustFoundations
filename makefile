@@ -27,3 +27,4 @@ doc:
 # Run our cli user management tool.
 # cargo run --manifest-path userman/Cargo.toml -- --help
 # cargo run --manifest-path userman/Cargo.toml -- list
+# cargo run -- add --username mantou --password baga --limited true

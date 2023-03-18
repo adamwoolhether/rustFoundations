@@ -155,6 +155,13 @@ pub fn hash_password(password: &str) -> String {
     format!("{:X}", hasher.finalize()) // `{:X}` means printing in hexadecimal. Prod system would want to add salt.
 }
 
+pub fn save_users_file(users: &HashMap<String, User>) {
+    use std::io::Write;
+    let json = serde_json::to_string_pretty(&users).unwrap();
+    let mut f = std::fs::File::create("users.json").unwrap();
+    f.write_all(json.as_bytes()).unwrap();
+}
+
 #[cfg(test)] // Only compile next section for tests.
 mod tests {
     use super::*;
