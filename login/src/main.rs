@@ -1,4 +1,4 @@
-use authentication::is_login_allowed;
+use authentication::{login, LoginAction};
 
 fn main() {
     println!("Welcome to the Insecure Secure Server");
@@ -6,9 +6,10 @@ fn main() {
     let mut input = String::new();
     let stdin = std::io::stdin();
     stdin.read_line(&mut input).unwrap();
-    if is_login_allowed(&input) {
-        println!("Welcome, {input}");
-    } else {
-        println!("Sorry, {} is not allowed", input.trim());
+
+    match login(&input) {
+        LoginAction::Admin => println!("You are administrator"),
+        LoginAction::User => println!("You have regular user rights"),
+        LoginAction::Denied => println!("You are not allowed to login"),
     }
 }
