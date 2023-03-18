@@ -1,4 +1,4 @@
-use authentication::{login, LoginAction};
+use authentication::{login, DeniedReason, LoginAction, Role};
 
 fn main() {
     println!("Welcome to the Insecure Secure Server");
@@ -8,8 +8,25 @@ fn main() {
     stdin.read_line(&mut input).unwrap();
 
     match login(&input) {
-        LoginAction::Admin => println!("You are administrator"),
-        LoginAction::User => println!("You have regular user rights"),
-        LoginAction::Denied => println!("You are not allowed to login"),
+        None => {
+            println!("{} is not a known user.", input.trim());
+            println!("This is where we handle new users.");
+        }
+        Some(LoginAction::Accept(role)) => {
+            println!("Welcome: {}", input.trim());
+            match role {
+                Role::Admin => println!("With great power, comes great responsibility."),
+                Role::Limited => println!("You have read-only access."),
+                Role::User => println!("You have regular user access."),
+            }
+        }
+        Some(LoginAction::Denied(DeniedReason::PasswordExpired)) => {
+            println!("Unfortunately, your password has expired.");
+            println!("It needs to be 800 chars long and contain an entire sonnet.");
+        }
+        Some(LoginAction::Denied(DeniedReason::AccountLocked { reason })) => {
+            println!("Sorry, {}, your login was denied.", input.trim());
+            println!("Reason: {reason}")
+        }
     }
 }
