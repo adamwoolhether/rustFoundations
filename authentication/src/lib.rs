@@ -1,15 +1,33 @@
 #[derive(PartialEq, Debug)]
-pub enum LoginAction {
+pub enum Role {
     Admin,
     User,
-    Denied,
+    Limited,
 }
 
-pub fn login(name: &str) -> LoginAction {
+#[derive(PartialEq, Debug)]
+pub enum DeniedReason {
+    PasswordExpired,
+    AccountLocked { reason: String }, // We can attach variables to individual entries.
+}
+
+#[derive(PartialEq, Debug)]
+pub enum LoginAction {
+    Accept(Role),
+    Denied(DeniedReason),
+}
+
+pub fn login(name: &str) -> Option<LoginAction> {
+    // Option is a type that either does or doesn't have a value.
+    // Its the closes thing to NULL in safe Rust.
     match name.to_lowercase().trim() {
-        "adam" => LoginAction::Admin,
-        "mike" | "jake" => LoginAction::User,
-        _ => LoginAction::Denied,
+        "adam" => Some(LoginAction::Accept(Role::Admin)),
+        "mike" => Some(LoginAction::Accept(Role::User)),
+        "jake" => Some(LoginAction::Denied(DeniedReason::PasswordExpired)),
+        "kevin" => Some(LoginAction::Denied(DeniedReason::AccountLocked {
+            reason: "Call HR!".to_string(),
+        })),
+        _ => None,
     }
 }
 
@@ -43,9 +61,18 @@ mod tests {
 
     #[test]
     fn test_enums() {
-        assert_eq!(login("Adam"), LoginAction::Admin);
-        assert_eq!(login("mike"), LoginAction::User);
-        assert_eq!(login("jake"), LoginAction::User);
-        assert_eq!(login("anonymous"), LoginAction::Denied);
+        assert_eq!(login("Adam"), Some(LoginAction::Accept(Role::Admin)));
+        assert_eq!(login("mike"), Some(LoginAction::Accept(Role::User)));
+        assert_eq!(
+            login("jake"),
+            Some(LoginAction::Denied(DeniedReason::PasswordExpired))
+        );
+        assert_eq!(login("anonymous"), None);
+        if let Some(LoginAction::Denied(DeniedReason::AccountLocked { reason: _ })) = login("kevin")
+        {
+            // Everything OK
+        } else {
+            panic!("Failed to read kevin");
+        }
     }
 }
