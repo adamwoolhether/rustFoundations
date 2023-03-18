@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
     pub username: String,
     password: String,
@@ -17,56 +18,68 @@ impl User {
     }
 }
 
-pub fn get_users() -> HashMap<String, User> {
-    // let mut result = HashMap::new();
-    // result.insert(
-    //     "adam".to_string(),
-    //     User::new("adam", "passowrd", LoginAction::Accept(Role::Admin)),
-    // );
-    // result
+pub fn build_users_file() {
+    use std::io::Write;
 
-    let mut users = vec![
+    let users = get_users();
+    let json = serde_json::to_string_pretty(&users).unwrap();
+    let mut f = std::fs::File::create("users.json").unwrap();
+    f.write_all(json.as_bytes()).unwrap();
+}
+
+pub fn get_users() -> HashMap<String, User> {
+    let json = std::fs::read_to_string("users.json").unwrap();
+    serde_json::from_str(&json).unwrap()
+
+    /*let mut result = HashMap::new();
+    result.insert(
+        "adam".to_string(),
         User::new("adam", "password", LoginAction::Accept(Role::Admin)),
-        User::new("mike", "password", LoginAction::Accept(Role::User)),
-        User::new(
-            "jake",
-            "password",
-            LoginAction::Denied(DeniedReason::PasswordExpired),
-        ),
-        User::new(
-            "kevin",
-            "password",
-            LoginAction::Denied(DeniedReason::AccountLocked {
-                reason: "Contact HR!".to_string(),
-            }),
-        ),
-    ];
+    );
+    result*/
+
+    // let mut users = vec![
+    //     User::new("adam", "password", LoginAction::Accept(Role::Admin)),
+    //     User::new("mike", "password", LoginAction::Accept(Role::User)),
+    //     User::new(
+    //         "jake",
+    //         "password",
+    //         LoginAction::Denied(DeniedReason::PasswordExpired),
+    //     ),
+    //     User::new(
+    //         "kevin",
+    //         "password",
+    //         LoginAction::Denied(DeniedReason::AccountLocked {
+    //             reason: "Contact HR!".to_string(),
+    //         }),
+    //     ),
+    // ];
 
     /*users
     .iter() //Create an iterator.
     .map(|user| (user.username.clone(), user.clone())) // Map to a tuple (username, user). We want a copy, not a pointer to user.
     .collect() // Collect infers the collection type from the function return.*/
     // Use drain to save memory:
-    users
-        .drain(0..)
-        .map(|user| (user.username.clone(), user))
-        .collect()
+    // users
+    //     .drain(0..)
+    //     .map(|user| (user.username.clone(), user))
+    //     .collect()
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum Role {
     Admin,
     User,
     Limited,
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum DeniedReason {
     PasswordExpired,
     AccountLocked { reason: String }, // We can attach variables to individual entries.
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum LoginAction {
     Accept(Role),
     Denied(DeniedReason),

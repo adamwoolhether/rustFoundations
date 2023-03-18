@@ -1,0 +1,34 @@
+{
+  "kevin": {
+    "username": "kevin",
+    "password": "password",
+    "action": {
+      "Denied": {
+        "AccountLocked": {
+          "reason": "Contact HR!"
+        }
+      }
+    }
+  },
+  "adam": {
+    "username": "adam",
+    "password": "password",
+    "action": {
+      "Accept": "Admin"
+    }
+  },
+  "mike": {
+    "username": "mike",
+    "password": "password",
+    "action": {
+      "Accept": "User"
+    }
+  },
+  "jake": {
+    "username": "jake",
+    "password": "password",
+    "action": {
+      "Denied": "PasswordExpired"
+    }
+  }
+}
