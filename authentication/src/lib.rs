@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+#[derive(Clone, Debug)]
 pub struct User {
     pub username: String,
     password: String,
@@ -14,8 +17,15 @@ impl User {
     }
 }
 
-pub fn get_users() -> Vec<User> {
-    vec![
+pub fn get_users() -> HashMap<String, User> {
+    // let mut result = HashMap::new();
+    // result.insert(
+    //     "adam".to_string(),
+    //     User::new("adam", "passowrd", LoginAction::Accept(Role::Admin)),
+    // );
+    // result
+
+    let mut users = vec![
         User::new("adam", "password", LoginAction::Accept(Role::Admin)),
         User::new("mike", "password", LoginAction::Accept(Role::User)),
         User::new(
@@ -30,7 +40,17 @@ pub fn get_users() -> Vec<User> {
                 reason: "Contact HR!".to_string(),
             }),
         ),
-    ]
+    ];
+
+    /*users
+    .iter() //Create an iterator.
+    .map(|user| (user.username.clone(), user.clone())) // Map to a tuple (username, user). We want a copy, not a pointer to user.
+    .collect() // Collect infers the collection type from the function return.*/
+    // Use drain to save memory:
+    users
+        .drain(0..)
+        .map(|user| (user.username.clone(), user))
+        .collect()
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -73,15 +93,34 @@ impl LoginAction {
     }
 }
 
-pub fn login(users: &[User], username: &str, password: &str) -> Option<LoginAction> {
+pub fn login(users: &HashMap<String, User>, username: &str, password: &str) -> Option<LoginAction> {
     // Option is a type that either does or doesn't have a value.
     // Its the closes thing to NULL in safe Rust.
     let username = username.trim().to_lowercase();
     let password = password.trim();
+
     users
-        .iter()
-        .find(|u| u.username == username && u.password == password)
-        .map(|user| user.action.clone())
+        .get(&username) // Returns the Option<User>
+        .filter(|user| user.password == password) // Only keep Some(user) if the password matches.
+        .map(|user| user.action.clone()) // Transform Some(user
+
+    // Replaces:
+    /*if let Some(user) = users.get(&username) {
+        if user.password == password {
+            Some(user.action.clone())
+        } else {
+            None
+        }
+    } else {
+        // No user - return None
+        None
+    }*/
+
+    // Using Vectors:
+    /*users
+    .iter()
+    .find(|u| u.username == username && u.password == password)
+    .map(|user| user.action.clone())*/
     // Replaces:
     /*if let Some(user) = users
         .iter()
