@@ -5,8 +5,10 @@ fn user_accepted(role: &Role) {
 }
 
 fn main() {
-    let mut users = get_users();
-    // `push` is one way to add an element to vectors.
+    let users = get_users();
+
+    // Using vectors:
+    /*// `push` is one way to add an element to vectors.
     users.push(User::new(
         "kent",
         "password",
@@ -17,7 +19,7 @@ fn main() {
 
     // Iterators are used to iterate over data and collect the results into a vector.
     let usernames: Vec<&String> = users.iter().map(|u| &u.username).collect();
-    println!("{usernames:#?}");
+    println!("{usernames:#?}");*/
 
     println!("Welcome to the Insecure Secure Server");
     println!("Enter your username:");
