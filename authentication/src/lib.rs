@@ -1,30 +1,8 @@
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use std::collections::HashMap;
+mod user;
 pub use user::User; // export `user` mod from top-level.
-
-pub mod user {
-    // use super::{LoginAction, hash_password}; // Refer to the parent modu
-    use crate::{hash_password, LoginAction};
-    use serde::{Deserialize, Serialize}; // Refer to the top of the current crate's tree.
-
-    #[derive(Clone, Debug, Serialize, Deserialize)]
-    pub struct User {
-        pub username: String,
-        pub(crate) password: String, // `pub (crate)` makes the field public for this crate only.
-        pub action: LoginAction,
-    }
-
-    impl User {
-        pub fn new(username: &str, password: &str, action: LoginAction) -> Self {
-            Self {
-                username: username.to_string(), // Convert a &str into a String.
-                password: hash_password(password),
-                action,
-            }
-        }
-    }
-}
 
 pub fn build_users_file() {
     use std::io::Write;
