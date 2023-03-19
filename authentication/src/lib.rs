@@ -1,8 +1,15 @@
-use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use std::collections::HashMap;
+mod login_action;
 mod user;
+pub use login_action::*;
 pub use user::User; // export `user` mod from top-level.
+
+// If we expect all who use our lib to need Serde, we could mandate that it is added
+// to their Cargo.toml file, or we could re-export it as so:
+pub mod serde {
+    pub use serde::*;
+}
 
 pub fn build_users_file() {
     use std::io::Write;
@@ -53,47 +60,6 @@ pub fn get_users_old() -> HashMap<String, User> {
         .drain(0..)
         .map(|user| (user.username.clone(), user))
         .collect()
-}
-
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
-pub enum Role {
-    Admin,
-    User,
-    Limited,
-}
-
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
-pub enum DeniedReason {
-    PasswordExpired,
-    AccountLocked { reason: String }, // We can attach variables to individual entries.
-}
-
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
-pub enum LoginAction {
-    Accept(Role),
-    Denied(DeniedReason),
-}
-
-impl LoginAction {
-    // An `associated function`, returns a variable of its type.
-    // Associated funcs can interact with the type `Self` but
-    // not with the content of any particular variable.
-    #[allow(dead_code)]
-    fn standard_user() -> Option<Self> {
-        Some(LoginAction::Accept(Role::User))
-    }
-
-    // do_login is a `member function` allows interaction with the content
-    // of any particular variable. `&self` means "provide a read-only
-    // reference to myself", allowing the function to see the current value.
-    // Two `function pointers` allow passing a func as a parameter and calling
-    // them inside the do_login.
-    pub fn do_login(&self, on_success: fn(&Role), on_denied: fn(&DeniedReason)) {
-        match self {
-            Self::Accept(role) => on_success(role),
-            Self::Denied(reason) => on_denied(reason),
-        }
-    }
 }
 
 pub fn login(users: &HashMap<String, User>, username: &str, password: &str) -> Option<LoginAction> {
