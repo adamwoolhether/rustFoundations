@@ -1,20 +1,27 @@
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use std::collections::HashMap;
+pub use user::User; // export `user` mod from top-level.
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct User {
-    pub username: String,
-    pub password: String,
-    pub action: LoginAction,
-}
+pub mod user {
+    // use super::{LoginAction, hash_password}; // Refer to the parent modu
+    use crate::{hash_password, LoginAction};
+    use serde::{Deserialize, Serialize}; // Refer to the top of the current crate's tree.
 
-impl User {
-    pub fn new(username: &str, password: &str, action: LoginAction) -> Self {
-        Self {
-            username: username.to_string(), // Convert a &str into a String.
-            password: hash_password(password),
-            action,
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct User {
+        pub username: String,
+        pub(crate) password: String, // `pub (crate)` makes the field public for this crate only.
+        pub action: LoginAction,
+    }
+
+    impl User {
+        pub fn new(username: &str, password: &str, action: LoginAction) -> Self {
+            Self {
+                username: username.to_string(), // Convert a &str into a String.
+                password: hash_password(password),
+                action,
+            }
         }
     }
 }
@@ -33,6 +40,7 @@ pub fn get_users() -> HashMap<String, User> {
     serde_json::from_str(&json).unwrap()
 }
 
+#[allow(dead_code)]
 pub fn get_users_old() -> HashMap<String, User> {
     /*let mut result = HashMap::new();
     result.insert(
@@ -92,7 +100,7 @@ impl LoginAction {
     // An `associated function`, returns a variable of its type.
     // Associated funcs can interact with the type `Self` but
     // not with the content of any particular variable.
-    #[warn(dead_code)]
+    #[allow(dead_code)]
     fn standard_user() -> Option<Self> {
         Some(LoginAction::Accept(Role::User))
     }

@@ -5,6 +5,7 @@ fn user_accepted(role: &Role) {
 }
 
 fn main() {
+    let test = User::new("test", "test", LoginAction::Accept(Role::Admin));
     // build_users_file();
     let users = get_users();
 
