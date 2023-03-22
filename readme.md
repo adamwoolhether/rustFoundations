@@ -165,7 +165,7 @@ fn main() {
 }
 ```
 
-### Iterators and Borrow Checker
+## Iterators and Borrow Checker
 By creating iterators, we are _borrowing_ the entire vector, so we can't change an element in the vector while we iterate it.  
 **You can't have mutable access to anything while something else has any access to it.**
 This won't work:
@@ -194,5 +194,256 @@ for i in 1..nodes.len() {
     if nodes[i].parent == 1 {
         nodes[i-1].parent = 0;
     }
+}
+```
+## Lifetimes
+Lifetimes prevent using a pointer after the item being pointed to is no longer available. It's needed because, unlike GC langs, we need prevent lifetime issues.
+
+This func passes a _reference_ to an i32, main _borrows_ `x`.
+```rust
+fn do_something(x: &i32) {
+    println!("{x}"); 
+}
+
+fn main() {
+    let x = 12;
+    do_something(&x);
+}
+```
+This is a syntactically more sound version of the following:
+```rust
+fn do_something<'a>(x: &'a i32) {
+    println!("{x}"); 
+}
+```
+
+### We still have to annotate lifetimes for functions that return and take more than one reference:
+```rust 
+fn get_x<'a, 'b>(x: &'a i32, _y: &'b i32) -> &'a i32 {
+    x
+}
+
+fn main() {
+    let a = 1;
+    let b = 2;
+    let _ = get_x(&a, &b);
+}
+
+// This doesn't work:
+/*
+fn get_x(x: &i32, _y: &i32) -> &i32 {
+    x
+}
+*/
+```
+
+### Lifetimes for Structures
+We can keep a reference for later use if we provide a lifetime annotation:
+```rust 
+struct Cat(String);
+
+struct CatFeeder<'a> {
+    cat: &'a Cat
+}
+
+fn main() {
+    let cats = vec![
+        Cat("Frodo".to_string()),
+        Cat("Bilbo".to_string()),
+        Cat("Pippin".to_string()),
+    ];
+    
+    let mut feeders = Vec::new();
+    for cat in cats.iter() {
+        feeders.push(CatFeeder{ cat })
+    }
+}
+```
+
+The following demonstrates how Rust allows the borrow-checker and lifetime checker to handle in-vector mutable borrowing and keep a mutable reference around:
+```rust
+struct Cat(String);
+
+struct CatFeeder<'a> {
+    cat: &'a mut Cat
+}
+
+impl Cat {
+    fn feed(&mut self) {
+        self.0 = format!("{} (purring)", self.0);
+    }
+}
+
+impl<'a> CatFeeder<'a> {
+    fn feed(&mut self) {
+        self.cat.feed();
+    }
+}
+
+fn main() {
+    let mut cats = vec![
+        Cat("Frodo".to_string()),
+        Cat("Bilbo".to_string()),
+        Cat("Pippin".to_string()),
+    ];
+    
+    let mut feeders = Vec::new();
+    for cat in cats.iter_mut() {
+        feeders.push(CatFeeder{ cat })
+    }
+    
+    feeders.iter_mut().for_each(|f| f.feed());
+}
+```
+With `impl<'a> CatFeeder<'a>`, we say "implement CatFeeder for lifetime 'a"
+
+### Garbage Collection in Rust?
+To pass and keep references, Rust has opt-in _reference counting_, a pointer that counts how many times it's being held, deleting it only when nobody is looking at it.  
+The following code demonstrates the case of needing read-only, safe, garbage collected pointers. We'll create a reference counted cats, giving their owners a reference to the cat.
+```rust
+use std::rc::Rc;
+
+struct Cat(String);
+
+struct CatOwner {
+  cat: Rc<Cat>
+}
+
+fn main() {
+  let mut cats = vec![
+    Rc::new(Cat("Frodo".to_string())),
+    Rc::new(Cat("Bilbo".to_string())),
+    Rc::new(Cat("Pippin".to_string())),
+  ];
+  
+  let mut owners = Vec::new();
+  for cat in cats {
+    owners.push(CatOwner{ cat: cat.clone() }); // We're actually cloning the `Rc`, incrementing the ownership counter.
+  }
+  
+  for owner in owners {
+    println!("{}", owner.cat.0)
+  }
+}
+```
+The `Rc` counter is designed to be cloned, it's fast! It's useful when we need _read-only_ references to a type, ensuring that the pointer
+lives long enough to remain valid. The code below is the same, showing how we've "defeated" the lifetime system:
+```rust
+use std::rc::Rc;
+
+struct Cat(String);
+
+struct CatOwner {
+    cat: Rc<Cat>
+}
+
+
+fn main() {
+    let mut owners = Vec::new();
+    {
+        let mut cats = vec![
+            Rc::new(Cat("Frodo".to_string())),
+            Rc::new(Cat("Bilbo".to_string())),
+            Rc::new(Cat("Pippin".to_string())),
+        ];
+        
+        for cat in cats {
+            owners.push(CatOwner{ cat: cat.clone() });
+        }
+    }
+    
+    for owner in owners {
+        println!("{}", owner.cat.0)
+    }
+}
+```
+
+Add a `Drop` handler to show when cats cease to exist:
+```rust
+use std::rc::Rc;
+
+struct Cat(String);
+
+struct CatOwner {
+  cat: Rc<Cat>
+}
+
+impl Drop for Cat {
+  fn drop(&mut self) {
+    println!("{} was dropped!", self.0)
+  }
+}
+
+fn main() {
+  {
+    let mut owners = Vec::new();
+    {
+      let mut cats = vec![
+        Rc::new(Cat("Frodo".to_string())),
+        Rc::new(Cat("Bilbo".to_string())),
+        Rc::new(Cat("Pippin".to_string())),
+      ];
+      
+      for cat in cats {
+        owners.push(CatOwner{ cat: cat.clone() });
+      }
+    }
+    for owner in owners.iter() {
+      println!("{}", owner.cat.0)
+    }
+  }
+  println!("Program end!")
+}
+```
+
+### If we NEED to store Mutable Pointers
+We can do this with the _interior mutability_ pattern. Below, `Cat` appears immutable and accessors remain immutable by using `self` rather than `mut self`.  
+`RefCell` implements locking to ensure that `borrow_mut` and `borrow` won't break memory safety guarantees.
+```rust
+use std::rc::Rc;
+use std::cell::RefCell;
+
+struct Cat {
+  name: RefCell<String>
+}
+
+impl Cat {
+  fn new(name: &str) -> Self {
+    Self {
+      name: RefCell::new(name.to_string())
+    }
+  }
+}
+
+struct Owner {
+  cat: Rc<Cat>
+}
+
+impl Owner {
+  fn feed(&self) {
+    let mut name_borrow = self.cat.name.borrow_mut();
+    *name_borrow += " (purring)";
+  }
+}
+
+fn main() {
+  let cats = vec![
+    Rc::new(Cat::new("Frodo")),
+    Rc::new(Cat::new("Bilbo")),
+    Rc::new(Cat::new("Pippin")),
+  ];
+
+  let mut owners = Vec::new();
+  for cat in cats.iter() {
+    owners.push(Owner{ cat: cat.clone() });
+  }
+
+  for owner in owners.iter() {
+    owner.feed();
+  }
+
+  for owner in owners.iter() {
+    println!("{}", owner.cat.name.borrow());
+  }
 }
 ```
