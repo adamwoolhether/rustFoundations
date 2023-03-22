@@ -12,7 +12,8 @@ members = [
     "login_system",
     "login",
     "authentication",
-    "userman"
+    "userman",
+    "primes_concurrency"
 ]
 # To import directly from git:
 # { git = "git path" } and load directly from a shared Git repository.
