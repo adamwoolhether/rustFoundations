@@ -1,5 +1,3 @@
-use std::sync::atomic::AtomicUsize;
-
 // is_prime is an inefficient prime numbers counter used as an excessive CPU-bound workload.
 fn is_prime(n: u32) -> bool {
     (2..=n / 2).all(|i| n % i != 0)
@@ -10,6 +8,7 @@ const MAX: u32 = 200_000;
 // Using one thread
 // Found 17984 primes in 1.4140562 seconds
 /*fn main() {
+    use std::sync::atomic::AtomicUsize;
     let mut count = 0;
     let now = std::time::Instant::now();
     for i in 2..MAX {
@@ -25,6 +24,7 @@ const MAX: u32 = 200_000;
 // Found 17984 prime numbers in the range 2..200000
 // Execution took 1.0796026 seconds
 /*fn main() {
+    use std::sync::atomic::AtomicUsize;
     static COUNTER: AtomicUsize = AtomicUsize::new(0);
     let now = std::time::Instant::now(); // TIMER
     let t1 = std::thread::spawn(|| {
@@ -52,7 +52,8 @@ const MAX: u32 = 200_000;
 // Using many threads
 // Found 17984 prime numbers in the range 2..200000
 // Execution took 0.38733995 seconds
-fn main() {
+/*fn main() {
+    use std::sync::atomic::AtomicUsize;
     const N_THREADS: u32 = 8;
 
     static COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -86,8 +87,45 @@ fn main() {
         COUNTER.load(std::sync::atomic::Ordering::Relaxed)
     );
     println!("Execution took {} seconds", duration.as_secs_f32());
-}
+}*/
 
+// /////////////////////////////////////////////////////////////////
+// Keeping a list of primes, rather than simply counting:
+
+fn main() {
+    use std::thread::JoinHandle;
+
+    const N_THREADS: u32 = 8;
+
+    // Hold thread handles
+    let mut threads: Vec<JoinHandle<Vec<u32>>> = Vec::with_capacity(N_THREADS as usize);
+
+    // Generate all the numbers we want to check
+    let group = MAX / N_THREADS;
+
+    let now = std::time::Instant::now();
+
+    for i in 0..N_THREADS {
+        let counter = i;
+        threads.push(std::thread::spawn(move || {
+            let range = u32::max(2, counter * group)..(i + 1) * group;
+            range.filter(|n| is_prime(*n)).collect()
+        }));
+    }
+
+    let mut primes = Vec::new();
+    for thread in threads {
+        if let Ok(new_primes) = thread.join() {
+            primes.extend(new_primes);
+        } else {
+            println!("Something went wrong");
+        }
+    }
+
+    let duration = now.elapsed();
+    println!("Found {} prime numbers in the range 2..{MAX}", primes.len());
+    println!("Execution took {} seconds", duration.as_secs_f32());
+}
 // /////////////////////////////////////////////////////////////////////////////////////////////////
 #[cfg(test)]
 mod test {
