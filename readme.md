@@ -542,3 +542,16 @@ fn main() {
 }
 ```
 We would want proper err handling for a production scenario: see [here](https://github.com/thebracket/ArdanUltimateRustFoundations/blob/main/day2/hour2/oop.md#cleaning-up-and-adding-error-handling).
+
+## RAII: Resource Acquisition is Initialization
+We should implement `Drop` for acquiring finite resources to guarantee that we relinquish our hold on the program.
+Ex:
+```rust
+struct Droppable;
+
+impl Drop for Droppable {
+  fn drop(&mut self) {
+    println!("Destruction")
+  }
+}
+```
