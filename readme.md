@@ -447,3 +447,98 @@ fn main() {
   }
 }
 ```
+
+## OOP Patterns
+Coming from an OOP background, we may be tempted to do something like this:
+This **wont work**:
+```rust
+struct Organization {
+    pub people: Vec<Person>,    
+}
+
+struct Person {
+    pub resources: Vec<Resource>,
+}
+
+impl Person {
+    fn give_resource(&mut self, name: &str, org: &mut Organization, recipient: usize) {
+        if let Some((idx, resource)) = self.resources.iter().enumerate().find(|(_, item)| name == item.name) {
+            self.resources.remove(idx);
+            org.people[recipient].resources.push(resource.clone());
+        }
+    }
+}
+
+#[derive(Clone)]
+struct Resource {
+    pub name: String,
+}
+
+fn main() {
+    let mut org = Organization {
+        people: vec![
+            Person { resources: vec![ Resource { name: "Stapler".to_string() } ]},
+            Person { resources: Vec::new() },
+        ]
+    };
+    org.people[0].give_resource("Stapler", &mut org, 1);
+}
+```
+
+But this violates the **golden rule of the borrow checker**: _we try to borrow something mutably and also have mutable access to it_. But with Rust, we have to break the problem down into smaller parts.  
+Let's move the function, making it an _organization_ function: meaning we only require one ownership while the organization retains ownership of people, allowing us to modify them.
+```rust
+struct Organization {
+  pub people: Vec<Person>,
+}
+
+// The Organization owns the workers and their resources. A single mutable borrow gives us the ability to give
+// `Organization` orders, without needing to index the `Organization`.
+impl Organization {
+  // calling `move_resource` we break the operation down into two steps:
+  // 1. Call `take_resource` on a person, encouraging us to check that the person has the resource.
+  // 2. When sure that the person has the resource, move it to the organization. `remove` will
+  // return the removed structure, so we can hand it off with move.
+  // 3. Now we're sure that we only got a copy of the resource, we can move it to the new recipient.
+  fn move_resource(&mut self, from: usize, to: usize, name: &str) {
+    if let Some(resource) = self.people[from].take_resource(name) {
+      self.people[to].give_resource(resource);
+    }
+  }
+}
+
+struct Person {
+  pub resources: Vec<Resource>,
+}
+
+impl Person {
+  fn take_resource(&mut self, name: &str) -> Option<Resource> {
+    let index = self.resources.iter().position(|r| r.name == name);
+    if let  Some(index) = index {
+      let resource = self.resources.remove(index);
+      Some(resource)
+    } else {
+      None
+    }
+  }
+  
+  fn give_resource(&mut self, resource: Resource) {
+    self.resources.push(resource);
+  }
+}
+
+struct Resource {
+  pub name: String,
+}
+
+fn main() {
+  let mut org = Organization {
+    people: vec![
+      Person { resources: vec![ Resource { name: "Stapler".to_string() }]},
+      Person { resources: Vec::new() },
+    ]
+  };
+  org.move_resource(0, 1, "stapler");
+}
+```
+We would want proper err handling for a production scenario: see [here](https://github.com/thebracket/ArdanUltimateRustFoundations/blob/main/day2/hour2/oop.md#cleaning-up-and-adding-error-handling).
