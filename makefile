@@ -30,3 +30,9 @@ doc:
 # cargo run -- add --username mantou --password baga --limited true
 # cargo run -- delete mantou
 # cargo run -- change-password adam baga
+
+# Adding a specific crate
+# cargo add tokio
+
+# To add everything from the crate:
+# cargo add tokio -F full

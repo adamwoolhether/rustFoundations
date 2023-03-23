@@ -14,7 +14,8 @@ members = [
     "authentication",
     "userman",
     "primes_concurrency",
-    "primes_count_rayon"
+    "primes_count_rayon",
+    "hello_tokio"
 ]
 # To import directly from git:
 # { git = "git path" } and load directly from a shared Git repository.
