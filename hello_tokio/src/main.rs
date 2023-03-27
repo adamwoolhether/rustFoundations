@@ -1,8 +1,239 @@
-use serde::{Deserialize, Serialize};
+use std::{sync::mpsc, thread};
+
+// Demonstrating use of std lib to use channels.
+fn main() {
+    let (tx, rx) = mpsc::channel::<i32>();
+
+    let handle = thread::spawn(move || {
+        loop {
+            let n = rx.recv().unwrap();
+            match n {
+                1 => println!("Hi from worker thread"),
+                _ => break,
+            }
+        }
+
+        println!("Thread closed cleanly");
+    });
+
+    for _ in 0..10 {
+        tx.send(1).unwrap();
+    }
+    tx.send(0).unwrap();
+
+    handle.join().unwrap();
+}
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////
+// Demonstrate use of broadcast channels with Tokio
+/*use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     spawn,
+    sync::mpsc::{self, Receiver},
+    time::sleep,
+};
+
+#[derive(Serialize, Deserialize)]
+enum Request {
+    Ping,
+}
+
+#[derive(Serialize, Deserialize)]
+enum Response {
+    Error,
+    Ack,
+}
+
+// Run the program and the 10 clients receiving an instruction to send a ping.
+// Each client will receive it and report an Ack.
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Create a broadcast channel and spawn 10 clients that subscribe to it.
+    let (tx, _rx) = tokio::sync::broadcast::channel::<u32>(32);
+    spawn(rpc_server());
+    for _ in 0..10 {
+        spawn(rpc_client(tx.subscribe()));
+    }
+
+    for _ in 0..10 {
+        sleep(Duration::from_secs(1)).await;
+        let _ = tx.send(1);
+    }
+
+    Ok(())
+}
+async fn rpc_client(mut rx: tokio::sync::broadcast::Receiver<u32>) -> anyhow::Result<()> {
+    let mut stream = TcpStream::connect("127.0.0.1:8123").await?;
+
+    loop {
+        let _n = rx.recv().await?;
+        let message = serde_json::to_vec(&Request::Ping)?;
+        stream.write_all(&message).await?;
+
+        let mut buf = vec![0; 1024];
+        let n = stream.read(&mut buf).await?;
+        let response: Response = serde_json::from_slice(&buf[0..n])?;
+        match response {
+            Response::Error => println!("Error!"),
+            Response::Ack => println!("Ack"),
+        }
+    }
+}
+
+async fn rpc_server() -> anyhow::Result<()> {
+    let listener = TcpListener::bind("127.0.0.1:8123").await?;
+
+    loop {
+        let (mut socket, address) = listener.accept().await?;
+        spawn(async move {
+            let mut buf = vec![0; 1024];
+            loop {
+                let n = socket
+                    .read(&mut buf)
+                    .await
+                    .expect("failed to read data from socket");
+
+                if n == 0 {
+                    return;
+                }
+
+                // Create the response
+                let mut response = Response::Error; // Create a default response, error.
+                let request = serde_json::from_slice(&buf[0..n]); // Deserialize incoming buffer from byte slice.
+                match request {
+                    // Use `match` to cancel the socket if data was unreadable, read if result was well.
+                    Err(..) => return,
+                    Ok(request) => match request {
+                        Request::Ping => response = Response::Ack, // If Ping is found, response with `Ack`.
+                    },
+                }
+
+                // Send the response.
+                let bytes = serde_json::to_vec(&response).unwrap();
+                socket
+                    .write_all(&bytes)
+                    .await
+                    .expect("failed to write data to socket");
+            }
+        });
+    }
+
+    Ok(())
+}*/
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////
+// Demonstrate use of channels with Tokio
+/*use serde::{Deserialize, Serialize};
+use std::time::Duration;
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpListener, TcpStream},
+    spawn,
+    sync::mpsc::{self, Receiver},
+    time::sleep,
+};
+
+#[derive(Serialize, Deserialize)]
+enum Request {
+    Ping,
+}
+
+#[derive(Serialize, Deserialize)]
+enum Response {
+    Error,
+    Ack,
+}
+
+// Demonstrating the use of channels.
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Create a "Multiple-producer, single consumer" channel.
+    let (tx, mut rx) = mpsc::channel(32); // 32 buffer size.
+    spawn(rpc_server());
+    spawn(rpc_client(rx));
+
+    for _ in 0..10 {
+        sleep(Duration::from_secs(1)).await;
+        let _ = tx.send(1).await;
+    }
+    let _ = tx.send(2).await;
+
+    Ok(())
+}
+
+// cargo run -- --server
+async fn rpc_server() -> anyhow::Result<()> {
+    let listener = TcpListener::bind("127.0.0.1:8123").await?;
+
+    loop {
+        let (mut socket, address) = listener.accept().await?;
+        spawn(async move {
+            let mut buf = vec![0; 1024];
+            loop {
+                let n = socket
+                    .read(&mut buf)
+                    .await
+                    .expect("failed to read data from socket");
+
+                if n == 0 {
+                    return;
+                }
+
+                // Create the response
+                let mut response = Response::Error; // Create a default response, error.
+                let request = serde_json::from_slice(&buf[0..n]); // Deserialize incoming buffer from byte slice.
+                match request {
+                    // Use `match` to cancel the socket if data was unreadable, read if result was well.
+                    Err(..) => return,
+                    Ok(request) => match request {
+                        Request::Ping => response = Response::Ack, // If Ping is found, response with `Ack`.
+                    },
+                }
+
+                // Send the response.
+                let bytes = serde_json::to_vec(&response).unwrap();
+                socket
+                    .write_all(&bytes)
+                    .await
+                    .expect("failed to write data to socket");
+            }
+        });
+    }
+
+    Ok(())
+}
+
+async fn rpc_client(mut rx: Receiver<u32>) -> anyhow::Result<()> {
+    let mut stream = TcpStream::connect("127.0.0.1:8123").await?;
+
+    while let Some(n) = rx.recv().await {
+        let message = serde_json::to_vec(&Request::Ping)?;
+        stream.write_all(&message).await?;
+
+        let mut buf = vec![0; 1024];
+        let n = stream.read(&mut buf).await?;
+        let response: Response = serde_json::from_slice(&buf[0..n])?;
+        match response {
+            Response::Error => println!("Error!"),
+            Response::Ack => println!("Ack"),
+        }
+    }
+
+    Ok(())
+}*/
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////
+// Demonstrating a TCP RPC server
+/*use serde::{Deserialize, Serialize};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpListener, TcpStream},
+    spawn,
+    sync::mpsc::{self, Receiver},
+    time::sleep,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -90,7 +321,8 @@ async fn rpc_client() -> anyhow::Result<()> {
     }
 
     Ok(())
-}
+}*/
+
 // /////////////////////////////////////////////////////////////////////////////////////////////////
 // Demonstrating a basic TCP Echo server.
 
