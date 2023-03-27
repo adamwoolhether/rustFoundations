@@ -1,9 +1,104 @@
+use serde::{Deserialize, Serialize};
 use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpListener, TcpStream},
+    spawn,
+};
+
+#[derive(Serialize, Deserialize)]
+enum Request {
+    Ping,
+}
+
+#[derive(Serialize, Deserialize)]
+enum Response {
+    Error,
+    Ack,
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Start the server if the `--server` flags is present. Clap is overkill for this.
+    let args: Vec<String> = std::env::args().collect();
+    if args.is_empty() {
+        println!("You must run with either --server or --client")
+    } else {
+        match args[1].as_str() {
+            "--server" => rpc_server().await?,
+            "--client" => rpc_client().await?,
+            _ => println!("You must run with either --server or --client"),
+        }
+    }
+    Ok(())
+}
+
+// cargo run -- --server
+async fn rpc_server() -> anyhow::Result<()> {
+    let listener = TcpListener::bind("127.0.0.1:8123").await?;
+
+    loop {
+        let (mut socket, address) = listener.accept().await?;
+        spawn(async move {
+            let mut buf = vec![0; 1024];
+            loop {
+                let n = socket
+                    .read(&mut buf)
+                    .await
+                    .expect("failed to read data from socket");
+
+                if n == 0 {
+                    return;
+                }
+
+                // Create the response
+                let mut response = Response::Error; // Create a default response, error.
+                let request = serde_json::from_slice(&buf[0..n]); // Deserialize incoming buffer from byte slice.
+                match request {
+                    // Use `match` to cancel the socket if data was unreadable, read if result was well.
+                    Err(..) => return,
+                    Ok(request) => match request {
+                        Request::Ping => response = Response::Ack, // If Ping is found, response with `Ack`.
+                    },
+                }
+
+                // Send the response.
+                let bytes = serde_json::to_vec(&response).unwrap();
+                socket
+                    .write_all(&bytes)
+                    .await
+                    .expect("failed to write data to socket");
+            }
+        });
+    }
+
+    Ok(())
+}
+
+//cargo run -- --client
+async fn rpc_client() -> anyhow::Result<()> {
+    let mut stream = TcpStream::connect("127.0.0.1:8123").await?;
+    let message = serde_json::to_vec(&Request::Ping)?;
+
+    stream.write_all(&message).await?;
+
+    let mut buf = vec![0; 1024];
+    let n = stream.read(&mut buf).await?;
+    let response: Response = serde_json::from_slice(&buf[0..n])?;
+    match response {
+        Response::Error => println!("Error!"),
+        Response::Ack => println!("Ack"),
+    }
+
+    Ok(())
+}
+// /////////////////////////////////////////////////////////////////////////////////////////////////
+// Demonstrating a basic TCP Echo server.
+
+/*use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpListener,
     spawn,
 };
-// use tokio::{join, spawn, task::spawn_blocking};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -38,10 +133,12 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
-}
+}*/
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////
 // Demonstrating basic async usage
+
+// use tokio::{join, spawn, task::spawn_blocking};
 
 // #[tokio::main]
 // async fn main() -> anyhow::Result<()> {
