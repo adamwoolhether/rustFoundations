@@ -555,3 +555,76 @@ impl Drop for Droppable {
   }
 }
 ```
+
+## Global Variables
+Rust doesn't support simple global vars.
+* You can't be sure when/where changes to global vars come from. This makes it impossible for borrow checker to do its job.
+* Rust assumes multi-threaded environment, it must assume the worst: that changes can come from anywhere, anytime.  
+This won't work:
+```rust
+ let shared = 5;
+
+fn main() {
+  println!("{shared}");
+}
+```
+### Constants
+We need to use a **Constant**:
+```rust
+const SHARED: usize = 5;
+
+fn main() {
+  println!("{SHARED}");
+}
+```
+Constants can be global or public global, they are immutable
+
+### Static Vars
+We can also use global vars with `static`, they can be mutable or not, although the compiler does not like it when we make them mutable!!!
+```rust
+static SHARED: usize = 5;
+// static mut SHARED: usize = 5;
+
+fn main() {
+    println!("{SHARED}");
+}
+```
+
+### Unsafe
+If we're feeling dangerous, we can make static vars `unsafe`. But we likely _shouldn't_ do this!
+```rust
+static mut SHARED: usize = 5;
+
+fn main() {
+    unsafe {
+        SHARED += 1;
+        println!("{SHARED}");
+    }
+}
+```
+
+### Safely share types with Interior Mutability
+As discussed in section on lifetimes, we can use interior mutability patterns to safely share data. The constructor _must_ be a constant function.
+```rust
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering;
+
+static SHARED: AtomicUsize = AtomicUsize::new(5);
+
+fn main() {
+        println!("{}", SHARED.load(Ordering::Relaxed));
+}
+```
+We can also use a synchronization primitive:
+```rust
+use std::sync::Mutex;
+
+static SHARED: Mutex<usize> = Mutex::new(5);
+
+fn main() {
+  println!("{}", *SHARED.lock().unwrap());
+}
+```
+
+### Lazy Singletons
+See the `global_lazy_init` example

@@ -225,6 +225,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "globals_lazy_init"
+version = "0.1.0"
+dependencies = [
+ "once_cell",
+]
+
+[[package]]
 name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
