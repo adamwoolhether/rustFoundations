@@ -628,3 +628,93 @@ fn main() {
 
 ### Lazy Singletons
 See the `global_lazy_init` example
+
+## Synchronization Primitives
+Mutex might not always be the type of synchronization we want.
+
+### Understanding Locking
+Let's talk about this example:
+```rust
+use std::sync::Mutex;
+
+struct MyType(usize);
+
+impl MyType {
+    const fn new(n: usize) -> Self { // <-- Notice we've added a constant constructor
+        Self(n)
+    }
+}
+
+static SHARED: Mutex<MyType> = Mutex::new(MyType::new(5));
+
+fn main() {
+    println!("{}", SHARED.lock().unwrap().0);
+
+  let mut lock = SHARED.lock().unwrap();
+  lock.0 += 1;
+  println!("{}", lock.0);
+
+  // This would create a deadlock!!! We locked twice! Rust doesn't provide safety against runtime deadlocks
+  // println!("{}", SHARED.lock().unwrap().0);
+}
+```
+`SHARED.lock().unwrap()` has two stages: 
+1. `lock()` for exclusive access to the interior variable. We can mutate it.
+2. `unrawp()` catches any errors that may occur.
+`let mut lock = SHARED.lock().unwrap();` will give us mutable access to change the global variable.
+
+The above code block also includes an example of a deadlock. We can mitigate this by using `Drop` to release the lock, done by simply dropping `lock` out of scope when we're done with it:
+```rust
+fn main() {
+  { 
+    let mut lock = SHARED.lock().unwrap(); 
+    lock.0 += 1;
+  }
+  
+  println!("{}", SHARED.lock().unwrap().0);
+}
+```
+Or we can manually drop the lock:
+```rust
+fn main() {
+  let mut lock = SHARED.lock().unwrap();
+  lock.0 += 1;
+  std::mem::drop(lock);
+  println!("{}", SHARED.lock().unwrap().0);
+}
+```
+
+### Types of Lock
+Rust has two popular locking primitives. We've seen `Mutex`, and there is also `RwLock`. Similar usage:
+```rust
+use std::sync::RwLock;
+
+struct MyType(usize);
+
+impl MyType{
+  const fn new(n: usize) -> Self { // <-- Using a constant constructor.
+    Self(n)
+  }
+}
+
+static SHARED: RwLock<MyType> = RwLock::new(MyType::new(5));
+
+fn main() {
+  for _ in 0..10 {
+    std::thread::spawn(|| {
+      let read_lock = SHARED.read().unwrap();
+      println!("The value of SHARED is {}", read_lock.0)
+      // To drop the read lock:
+      // std::mem::drop(read_lock);
+    });
+    
+    std::thread::spawn(|| {
+      let mut write_lock = SHARED.write().unwrap();
+      write_lock.0 += 1;
+    });
+    
+    std::thread::sleep(std::time::Duration::from_secs(5));
+  }
+}
+
+```
