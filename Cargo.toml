@@ -16,7 +16,8 @@ members = [
     "primes_concurrency",
     "primes_count_rayon",
     "hello_tokio",
-    "globals_lazy_init"
+    "globals_lazy_init",
+    "new_types"
 ]
 # To import directly from git:
 # { git = "git path" } and load directly from a shared Git repository.

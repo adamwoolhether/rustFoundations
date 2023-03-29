@@ -716,5 +716,24 @@ fn main() {
     std::thread::sleep(std::time::Duration::from_secs(5));
   }
 }
+```
 
+## New Types
+See the `new_types` section.
+
+### ToString trait
+If we're sick of typing `to_string()` everywhere, we can implement this trait:
+```rust
+fn take_my_text<S: ToString>(text: S) {
+  let _s = text.to_string();
+  // Work with the string
+}
+
+fn main() {
+  take_my_text("Hello");
+  take_my_text("Hello".to_string());
+  take_my_text(String::new());
+  let n = 5;
+  take_my_text(n);
+}
 ```
