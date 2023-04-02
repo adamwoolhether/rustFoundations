@@ -19,7 +19,9 @@ members = [
     "globals_lazy_init",
     "new_types",
     "generic_data_store",
-    "macros_simple"
+    "macros_simple",
+    "feature_exec",
+    "feature_lib"
 ]
 # To import directly from git:
 # { git = "git path" } and load directly from a shared Git repository.
