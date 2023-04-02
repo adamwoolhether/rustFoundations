@@ -225,6 +225,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "generic_data_store"
+version = "0.1.0"
+
+[[package]]
 name = "globals_lazy_init"
 version = "0.1.0"
 dependencies = [
