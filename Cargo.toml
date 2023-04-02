@@ -18,7 +18,8 @@ members = [
     "hello_tokio",
     "globals_lazy_init",
     "new_types",
-    "generic_data_store"
+    "generic_data_store",
+    "macros_simple"
 ]
 # To import directly from git:
 # { git = "git path" } and load directly from a shared Git repository.

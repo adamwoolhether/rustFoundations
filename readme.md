@@ -1051,3 +1051,13 @@ Some things we can't do at compile time:
 * Use floating point numbers, except as direct constants. Functions using floating points won't work.
 * Use iterators.
 * Connect to external data sources _other than_ files. (`include_str!` and `include_bytes!` can embed files in our binary)
+
+## Macros
+Let us change the language's syntax. Two types:
+* Declarative
+* Procedural
+
+Declarative are more simple, and we'll only cover them here.
+
+Using macros are always defined with `!`.
+
