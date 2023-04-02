@@ -5,4 +5,10 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
+# Deps that are only loaded by dev-tools.
+[dev-dependencies]
+criterion = { version = "0.4", features = [ "html_reports" ] }
+
+[[bench]]
+name = "my_benchmark"
+harness = false

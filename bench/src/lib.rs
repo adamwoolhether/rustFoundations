@@ -1,4 +1,4 @@
-#![feature(test)]
+/*#![feature(test)]
 extern crate test;
 
 pub fn add(left: usize, right: usize) -> usize {
@@ -21,3 +21,4 @@ mod tests {
         b.iter(|| add(2, 4));
     }
 }
+*/
