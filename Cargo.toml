@@ -23,8 +23,9 @@ members = [
     "feature_exec",
     "feature_lib",
     "dashmap_lock_free_structures",
-#    "bench",
-    "tcp_login_server"
+    "bench",
+    "tcp_login_server",
+    "web"
 ]
 # To import directly from git:
 # { git = "git path" } and load directly from a shared Git repository.
