@@ -1061,3 +1061,28 @@ Declarative are more simple, and we'll only cover them here.
 
 Using macros are always defined with `!`.
 
+## Benchmarks
+Quick and dirty way using `Instant` and `Duration`.
+```rust
+use std::time::Instant;
+
+fn main() {
+    let now = Instant::now();
+    let mut i = 0;
+    for j in 0 .. 1_000 {
+        i += j*j;
+    }
+    let elapsed = now.elapsed();
+    println!("Time elapsed: {} nanos", elapsed.as_nanos());
+    println!("{i}");
+}
+```
+
+### Embedding benchmarks in tests:
+`criterion` test suite will allow this, but we need the `nightly` toolchain:
+```rustup install nightly
+cargo init bench --lib
+```
+**See bench lib**
+And we can run the bench with:
+```cargo +nightly bench```
