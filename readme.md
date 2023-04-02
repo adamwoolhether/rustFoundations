@@ -973,3 +973,81 @@ fn main() {
     }
 }
 ```
+
+## Constants Details
+### Compile-Dependent Constants
+To adjust compile-time declaration of contants:
+```rust 
+// Based on release:
+#[cfg(debug)]
+const A: usize = 3;
+#[cfg(release)]
+const A: usize = 4;
+
+// Based on OS:
+#[cfg(target_family = "unix")]
+const A: usize = 3;
+#[cfg(not(target_family = "unix"))]
+const A: usize = 4;
+```
+
+### Constant Functions
+Add `const` to functions to have them execute at compile time:
+```rust
+const fn add(a: usize, b: usize) -> usize {
+    a + b
+}
+
+const A: usize = add(4, 6);
+
+fn main() {
+    println!("{A}");
+}
+```
+And we can use the constant function with dynamic inputs:
+```rust
+const fn add(a: usize, b: usize) -> usize {
+    a + b
+}
+
+const A: usize = add(4, 6);
+
+fn main() {
+    let mut i = 5;
+    i += 3;
+    println!("{}", add(A, i));
+    println!("{A}");
+}
+```
+A more complicated example:
+```rust
+const fn loopy() -> usize {
+  let mut n = 1;
+  let mut i = 0;
+  while i < 20 {
+    n += i;
+    i += 1;
+  }
+  n
+}
+
+const A: usize = loopy();
+
+fn main() {
+    println!("{A}");
+}
+
+// Note that `loopy` wouldn't work if we used a for loop as such:
+/*const fn loopy() -> usize {
+  let mut n = 1;
+  for i in 0..20 {
+    n += i;
+  }
+  n
+}*/
+```
+
+Some things we can't do at compile time:
+* Use floating point numbers, except as direct constants. Functions using floating points won't work.
+* Use iterators.
+* Connect to external data sources _other than_ files. (`include_str!` and `include_bytes!` can embed files in our binary)
