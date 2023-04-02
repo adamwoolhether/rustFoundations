@@ -737,3 +737,239 @@ fn main() {
   take_my_text(n);
 }
 ```
+
+## Traits
+Here we demonstrate a `Cat` that implements an `Animal` trait that has a default fn if it's not explicitly implemented.
+```rust
+trait Animal {
+    // fn make_noise(&self);
+    fn make_noise(&self) {
+      println!("Who knows what noise I make?")
+    }
+
+}
+
+struct Cat;
+
+impl Animal for Cat {
+    fn make_noise(&self) {
+        println!("Meow")
+    }
+}
+
+struct Tortoise;
+
+impl Animal for Tortoise {}
+
+fn main() {
+  let cat = Cat{};
+  cat.make_noise();
+  let tortoise = Tortoise{};
+  tortoise.make_noise();
+}
+```
+
+Note that traits cannot contain any data, only functions. But you an reference internals of a type:
+```rust
+trait Animal {
+  // fn make_noise(&self);
+  fn make_noise(&self) {
+    println!("Who knows what noise I make?")
+  }
+
+}
+struct Cat {
+    noise: String
+}
+
+impl Animal for Cat {
+    fn make_noise(&self) {
+        println!("{}", self.noise);
+    }
+}
+
+fn main() {
+    let cat = Cat{ noise: "meow".to_string() };
+    cat.make_noise();
+}
+```
+
+### Generic Funcs and Trais dependencies.
+```rust
+trait Animal {
+    fn make_noise(&self) {
+        println!("Who knows what noise I make?")
+    }
+}
+
+struct Cat;
+
+impl Animal for Cat {
+    fn make_noise(&self) {
+        println!("Meow")
+    }
+}
+
+struct Tortoise;
+
+impl Animal for Tortoise {}
+
+// Here's a generic func that requires our trait, we can pet all animals:
+// fn pet<A: Animal>(animal: A)
+// {
+//   animal.make_noise()
+// }
+
+// Second trait:
+trait Tame {}
+
+// Pretend that cats are tame:
+impl Tame for Cat{}
+
+// Now we can prevent the petting of animals that aren't tame!
+fn pet<A: Animal + Tame>(animal: A) {
+  animal.make_noise()
+}
+
+fn main() {
+  let cat = Cat{};
+  let tortoise = Tortoise{};
+  pet(cat);
+  pet(tortoise);
+}
+```
+
+### Polymorphic Traits
+How would we store variables that all implement a trait into the same collection/vector??
+This won't work:
+```rust
+fn main() {
+    let cat = Cat{};
+    let tortoise = Tortoise{};
+    
+    let animals = vec![cat, tortoise];
+}
+```
+We need to use `Box`, and explicitly tell Rust to turn on _dynamic dispatch_.
+`dyn` means that "the actual type may change", ie: it's dynamic.
+```rust
+
+fn main() {
+  let cat = Cat{};
+  let tortoise = Tortoise{};
+  
+  let mut animals: Vec<Box<dyn Animal>> = Vec::new(); // Note `dyn` here.
+  animals.push(Box::new(cat));
+  animals.push(Box::new(tortoise));
+  for animal in animals.iter() {
+    animal.make_noise();
+  }
+}
+```
+
+### Making Traits require other traits
+Let's make every animal support debug:
+```rust
+trait Animal: std::fmt::Debug + std::fmt::Display { // Added a second requirement as well.
+    fn make_noise(&self) {
+        println!("Who knows what noise I make?")
+    }
+}
+
+#[derive(Debug)]
+struct Cat;
+
+#[derive(Debug)]
+struct Tortoise;
+
+// Our second requirement above means we have to make every type printable.
+impl std::fmt::Display for Cat {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(f, "Cat")
+  }
+}
+
+impl std::fmt::Display for Tortoise {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(f, "Tortoise")
+  }
+}
+
+// This allows us to debug-print every animal in the loop:
+fn main() {
+  for animal in animals.iter() {
+    println!("{:?}", animal);
+    animal.make_noise();
+  }
+  
+  // Second requirement above allows us to print an animal like a primitive:
+  for animal in animals.iter() {
+    println!("{animal}");
+    animal.make_noise();
+  }
+}
+```
+
+### If you need to know the concreted type:
+```rust 
+use std::any::Any;
+
+trait Animal: std::fmt::Debug + std::fmt::Display + Any {
+    fn make_noise(&self) {
+        println!("Who knows what noise I make?")
+    }
+    
+    fn as_any(&self) -> &dyn Any;
+}
+
+#[derive(Debug)]
+struct Cat;
+
+impl Animal for Cat {
+    fn make_noise(&self) {
+        println!("Meow")
+    }
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+#[derive(Debug)]
+struct Tortoise;
+
+impl Animal for Tortoise {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl std::fmt::Display for Cat {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Cat")
+    }
+}
+
+impl std::fmt::Display for Tortoise {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Tortoise")
+    }
+}
+
+fn main() {
+    let cat = Cat{};
+    let tortoise = Tortoise{};
+
+    let mut animals: Vec<Box<dyn Animal>> = Vec::new();
+    animals.push(Box::new(cat));
+    animals.push(Box::new(tortoise));
+    
+    for animal in animals.iter() {
+        if let Some(cat) = animal.as_any().downcast_ref::<Cat>() {
+            println!("We have access to the cat");
+        }
+        println!("{animal}");
+        animal.make_noise();
+    }
+}
+```
