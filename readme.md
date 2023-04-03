@@ -1086,3 +1086,21 @@ cargo init bench --lib
 **See bench lib**
 And we can run the bench with:
 ```cargo +nightly bench```
+
+## Rust Safe Guarantees
+#### Memory
+* Guarantees you won't use-after free, buffer overrun, dangling pointer, or iterator invalidation.
+* Does NOT guarantee prevention of memory leaks.
+#### Thread Safety
+* It prevents data-races.
+* Does NOT prevent creation of deadlocks via Mutex misuse.
+#### Type Safety
+* Done when explicitly using `NewTypes` (or similar)
+#### `Unsafe` Tag
+* Needed when you talk directly with hardware or call programs through FFI.
+#### Audits
+* When used in production, be sure to use auditing:
+```
+cargo install cargo-audit
+run cargo audit
+```
